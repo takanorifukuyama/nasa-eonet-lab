@@ -1,90 +1,81 @@
-# EARTHWATCH / NASA EONET Lab
+# EARTHWATCH
 
-![MIT](https://img.shields.io/badge/license-MIT-blue.svg)
+世界の山火事、嵐、火山活動を、地図とグラフで探索するアプリ。
+NASA の [EONET](https://eonet.gsfc.nasa.gov/) 公開データから、地球の変化をたどれます。
 
-NASA の [EONET v3](https://eonet.gsfc.nasa.gov/docs/v3) オープンデータを使った、**Rust + React + Tauri 2 + DuckDB-Wasm** の学習用デスクトップアプリです。NASA Space Apps Challenge 2026への応募作品とは独立した、技術練習用OSSです。
+MITライセンスの独立した学習用OSSです。NASAの公式アプリではなく、NASA Space Apps Challengeへの応募作品とは独立しています。
+
+## できること
+
+- 過去30日・90日・365日の自然現象を読み込み、記録の状態で絞り込み。
+- 日本語カテゴリ、イベント名・地名による検索、観測日・名前による並び替え。
+- 世界地図と一覧からイベントを選び、最新の観測日・代表位置・出典を確認。
+- 表示中のイベントを種類別・観測日別・南北半球別にグラフで比較。
+- 40件ずつ追加表示し、読み込んだ全イベントを一覧から探索。
+- 狭い画面では地図と一覧を切り替え。キーボード操作と動きを減らす設定にも対応。
+- 取得失敗時に再試行。更新できない場合も、前回取得したデータとその条件を維持。
+
+操作画面では実装技術やクエリ編集を見せず、探索と比較に集中できます。
+
+## 起動
+
+Node.js 22.12以降の22系、または24系とnpmを用意してください。
+
+```bash
+npm ci
+npm run dev
+```
+
+表示されたローカルURLを開くと、ブラウザーから同じNASAの公開データを読み込みます。APIキーは不要です。データ取得と背景地図の表示にはインターネット接続が必要です。
+
+### デスクトップアプリ
+
+Rust stableと[Tauri 2の前提環境](https://v2.tauri.app/start/prerequisites/)も必要です。
+macOSではXcode Command Line Tools、LinuxではWebKitGTKなどを用意してください。
+
+```bash
+npm run tauri dev
+npm run tauri build
+```
+
+デスクトップではデータ取得をRust側で行い、出典へのリンクは既定ブラウザーで開きます。
+
+## 開発と検証
+
+```bash
+npm test                 # 外部データの整形、取得、集計ロジックの回帰テスト
+npm run build            # TypeScriptと本番バンドル
+npm run check            # 上の2つをまとめて実行
+npx playwright install chromium
+npm run test:e2e          # 検索、地図、集計、失敗時の復旧、モバイル操作
+cargo check --manifest-path src-tauri/Cargo.toml
+```
+
+E2Eテストは専用のサンプルデータと地図画像を使い、NASAや地図配信サービスの稼働に依存しません。テスト専用データを製品画面へフォールバック表示することはありません。ローカル開発サーバーはテスト設定が起動します。
+
+GitHub Actionsはフロントエンドのテスト・ビルド・ブラウザー操作、およびmacOSでのRustチェックを実行します。ブラウザー検証のレポートとスクリーンショットは`browser-checks`成果物から確認できます。E2Eのスクリーンショットは実データの観測画面ではなく、回帰テスト用サンプルです。
 
 ## 技術構成
 
-```text
-NASA EONET v3 (JSON / HTTPS)
-  │
-  ▼
-Tauri 2 / Rust (reqwest, TLS, timeout, parameter validation)
-  │  invoke('fetch_eonet')
-  ▼
-React + TypeScript
-  ├─ Leaflet: 自然現象を地図表示
-  └─ DuckDB-Wasm: WebView内にJSONを取り込み、ローカルSQL集計
-```
+- React / TypeScript / Vite：検索、選択、表示中の条件、レスポンシブUI。
+- Leaflet：地図・選択地点・概略位置表示。背景地図はCARTO / OpenStreetMap。
+- DuckDB-Wasm：表示対象のイベントを端末内で集計。必要になるまで読み込まず、失敗しても地図と一覧を使えます。
+- Tauri 2 / Rust / reqwest：デスクトップの固定されたNASA取得先、タイムアウト、パラメーター検証。
+- Tauri Opener：出典を既定ブラウザーで開く。HTTPSリンクだけを許可し、ファイル操作は許可しません。
 
-- **Rust バックエンド**：固定された NASA EONET エンドポイントにアクセス。任意URLへのアクセスは不可。
-- **React フロントエンド**：イベント検索・カテゴリフィルター・地図・詳細パネル。
-- **DuckDB-Wasm**：収集データのSQL集計。BigQuery・外部DBは不要。
-- **Tauri 2**：Mac / Windows / Linux 向けデスクトップ実行基盤。
-- **MIT License**：アプリの自作コードをMITで公開。NASA・地図タイル・依存ライブラリはそれぞれの条件に従います。
+デスクトップではRustコマンド、ブラウザーでは固定の[EONET v3](https://eonet.gsfc.nasa.gov/docs/v3)のURLを使用します。既定の取得上限は700件です。集計への入力は検索・カテゴリで絞り込んだイベントと常に共通です。
 
-## ローカル起動
+## データの読み方
 
-**前提**：Node.js 20.19+ または 22.12+、npm、Rust stable + Cargo、Tauri 2 開発環境。macOSではXcode Command Line Toolsが必要です。LinuxではTauri依存のWebKitGTK等も必要です。
-
-```bash
-npm install
-npm run tauri dev
-```
-
-静的なReactアプリだけの `npm run dev` では、Rustコマンドが存在しないためNASAデータを取得できません。Tauri経由で起動してください。
-
-```bash
-npm run build      # TypeScript + Vite の検証・バンドル
-npm run tauri build  # プラットフォームごとのデスクトップパッケージ生成
-```
-
-## 操作
-
-1. 対象期間（30 / 90 / 365日）と EONETイベント状態を指定。
-2. `NASA APIから取得` を押すと Rust がNASAのJSONを取得。
-3. Reactの地図・リストからイベントを調べる。
-4. DuckDB-Wasmでカテゴリ別・日別・南北半球別のSQL集計を実行。SQL編集も可能。
-
-```sql
-SELECT category, COUNT(*) AS events
-FROM events
-GROUP BY category
-ORDER BY events DESC;
-```
-
-## データの注意点
-
-- [EONET](https://eonet.gsfc.nasa.gov/) は自然現象の**イベント索引**です。すべての災害や現時点での被害を網羅するものではありません。
-- `open` はEONETの管理状態であり、リアルタイム危険情報と同義ではありません。
-- Polygon等のGeometryは地図表示用の**概略代表点**に変換します。面積や正確な地理解析に使用しないでください。
-- 1回のAPI取得は最大700件。700件に達した場合は結果が途中で切れている可能性があります。
-- DuckDBはWebView内のみで処理し、アプリはデータを永続保存しません。
-- 地図タイルはオンラインのCARTO / OpenStreetMapを使用します。
-
-## 今後の練習
-
-- EONET GeoJSON の面・線をマップへ描画
-- NASA GIBS 衛星画像とイベント情報を重ねる
-- Parquet と地理空間SQLを試す
-- NASAのDEM/GeoTIFFに進む（GDALなどの地理空間処理ツールを検討）
-
-## 検証状況
-
-構成ファイル（JSON）とコードの静的検査は実施可能ですが、制作環境ではnpmの依存パッケージ取得とRustツールチェーンが利用できず、TauriアプリのネイティブビルドとAPIの動作確認は未実施です。ローカル環境で上記コマンドを実行して確認してください。
+- EONETは自然現象のイベント索引であり、すべての災害や被害を網羅するものではありません。
+- 「継続中」は提供元の管理上の状態で、現在の危険度を示しません。防災判断には地域の公的情報を確認してください。
+- 日付はイベントの最新観測日をUTCで表示します。発生日とは限りません。観測日別グラフも最新観測日で集計します。
+- 複数の観測がある場合は日付順で最新を選びます。最新記録に位置がなければ、古い位置を最新として表示しません。
+- 面・線の位置は概略代表点です。現象の範囲、面積、精密な地理解析には使用しないでください。
+- 位置や日付が不明な記録も一覧・集計に含みます。観測日グラフは新しい7つの日付・それ以前・日付不明に分け、合計件数を維持します。
+- 700件に達すると上限の案内を表示します。期間内の全件を取得できたとは限りません。
+- 取得したイベントをアプリが永続保存することはありません。
 
 ## License
 
-Source code: [MIT](LICENSE). This is an independent educational project and is not affiliated with or endorsed by NASA.
-
-## 個人GitHubに公開する
-
-GitHub CLIで本人アカウントにログイン済みなら、リポジトリ未作成の状態から以下で公開できます。
-
-```bash
-cd nasa-eonet-tauri
-./publish-personal.sh
-```
-
-`git config user.name` / `git config user.email` は事前に設定してください。公開先は `takanorifukuyama/nasa-eonet-lab` に固定してあり、組織には作成しません。リポジトリ作成済みの場合にはこのスクリプトを再実行しないでください。
+Source code: [MIT](LICENSE). NASAのデータ、地図、依存ライブラリにはそれぞれの利用条件が適用されます。

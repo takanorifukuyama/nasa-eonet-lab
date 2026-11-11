@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "NASA EONET Lab",
+  "productName": "EARTHWATCH",
   "version": "0.1.0",
   "identifier": "dev.takanorifukuyama.nasaeonetlab",
   "build": {
@@ -10,7 +10,7 @@
     "frontendDist": "../dist"
   },
   "app": {
-    "windows": [{ "title":"EARTHWATCH / NASA EONET Lab", "width":1440, "height":920, "minWidth":840, "minHeight":640 }],
+    "windows": [{ "title":"EARTHWATCH — 世界の自然現象を探す", "width":1440, "height":1020, "minWidth":840, "minHeight":640 }],
     "security": {
       "csp": "default-src 'self' ipc: http://ipc.localhost; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.basemaps.cartocdn.com; connect-src 'self' ipc: http://ipc.localhost; worker-src 'self' blob:; font-src 'self' data:; object-src 'none'"
     }
