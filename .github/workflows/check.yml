@@ -26,6 +26,7 @@ jobs:
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e
       - name: Capture real-data preview
+        if: ${{ !cancelled() }}
         continue-on-error: true
         run: node scripts/capture-preview.mjs
       - uses: actions/upload-artifact@v4

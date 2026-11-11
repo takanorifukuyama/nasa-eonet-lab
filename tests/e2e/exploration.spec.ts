@@ -6,6 +6,7 @@ const technicalTerms = /DuckDB|WebView|\bRust\b|\bTauri\b|\bSQL\b|\bAPI\b|\bWasm
 const displayedCount = (page: Page) => page.locator('.summary-item').nth(0).locator('.summary-value');
 const mappedCount = (page: Page) => page.locator('.summary-item').nth(1).locator('.summary-value');
 const events = (page: Page) => page.locator('.event-card');
+const categoryFilters = (page: Page) => page.getByRole('group', { name: '現象の種類で絞り込み', exact: true });
 
 async function openFixture(page: Page, count = fixtureEvents.length) {
   await page.goto('/');
@@ -49,7 +50,7 @@ test('fixture data: desktop loads, summarizes events and hides implementation de
 
 test('category and search keep the list, map counts and insights in sync', async ({ page }) => {
   await openFixture(page);
-  await page.getByRole('button', { name: /^山火事/ }).click();
+  await categoryFilters(page).getByRole('button', { name: /^山火事/ }).click();
   await expect(displayedCount(page)).toHaveText('3');
   await expect(mappedCount(page)).toHaveText('3');
   await expect(events(page)).toHaveCount(3);
@@ -64,7 +65,7 @@ test('category and search keep the list, map counts and insights in sync', async
 
   await page.getByRole('button', { name: '検索をクリア', exact: true }).click();
   await expect(displayedCount(page)).toHaveText('3');
-  await page.getByRole('button', { name: /^すべて/ }).click();
+  await categoryFilters(page).getByRole('button', { name: /^すべて/ }).click();
   await expect(displayedCount(page)).toHaveText('10');
   await expectInsights(page, 10);
 });
@@ -82,7 +83,7 @@ test('event selection opens accessible details and clears when filtered out', as
   await expect(cedar).toHaveAttribute('aria-pressed', 'false');
 
   await cedar.click();
-  await page.getByRole('button', { name: /^暴風雨/ }).click();
+  await categoryFilters(page).getByRole('button', { name: /^暴風雨/ }).click();
   await expect(detail).toBeHidden();
   await expect(page.locator('.event-card[aria-pressed="true"]')).toHaveCount(0);
   await expect(displayedCount(page)).toHaveText('2');
@@ -198,7 +199,7 @@ test('analysis initialization failure leaves map and list usable without exposin
   await openFixture(page);
   await expect(page.locator('.insights-state')).toContainText('傾向を表示できませんでした', { timeout: 30_000 });
   await expect(page.locator('body')).not.toContainText(technicalTerms);
-  await page.getByRole('button', { name: /^山火事/ }).click();
+  await categoryFilters(page).getByRole('button', { name: /^山火事/ }).click();
   await expect(displayedCount(page)).toHaveText('3');
   await expect(mappedCount(page)).toHaveText('3');
   await expect(events(page)).toHaveCount(3);
