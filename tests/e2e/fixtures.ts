@@ -2,10 +2,10 @@ import type { Page } from '@playwright/test';
 import type { EonetEvent } from '../../src/lib/eonet';
 
 export const API_ROUTE = 'https://eonet.gsfc.nasa.gov/api/v3/events*';
-export const TILE_ROUTE = /^https:\/\/[a-d]\.basemaps\.cartocdn\.com\//;
+export const TILE_ROUTE = /^https:\/\/tile\.openstreetmap\.org\//;
 
 // Synthetic events and transparent map tiles keep these regression checks
-// independent of NASA/CARTO uptime. None are used by the production application.
+// independent of NASA/OSM uptime. None are used by the production application.
 export const fixtureEvents: EonetEvent[] = [
   ['WF-CEDAR', 'Fixture Cedar Fire', 'wildfires', 'Wildfires', 10, -123, 44, false],
   ['WF-ALPINE', 'Fixture Alpine Fire', 'wildfires', 'Wildfires', 8, -110, 40, true],

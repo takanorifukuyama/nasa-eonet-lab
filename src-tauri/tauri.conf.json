@@ -10,9 +10,9 @@
     "frontendDist": "../dist"
   },
   "app": {
-    "windows": [{ "title":"EARTHWATCH — 世界の自然現象を探す", "width":1440, "height":1020, "minWidth":840, "minHeight":640 }],
+    "windows": [{ "title":"EARTHWATCH — 世界の自然現象を探す", "width":1440, "height":1020, "minWidth":840, "minHeight":640, "userAgent":"EARTHWATCH/0.1 (+https://github.com/takanorifukuyama/nasa-eonet-lab)" }],
     "security": {
-      "csp": "default-src 'self' ipc: http://ipc.localhost; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.basemaps.cartocdn.com; connect-src 'self' ipc: http://ipc.localhost; worker-src 'self' blob:; font-src 'self' data:; object-src 'none'"
+      "csp": "default-src 'self' ipc: http://ipc.localhost; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://tile.openstreetmap.org; connect-src 'self' ipc: http://ipc.localhost; worker-src 'self' blob:; font-src 'self' data:; object-src 'none'"
     }
   },
   "bundle": { "active":true, "targets":"all", "icon": ["icons/32x32.png", "icons/128x128.png", "icons/128x128@2x.png", "icons/icon.icns", "icons/icon.ico"] }

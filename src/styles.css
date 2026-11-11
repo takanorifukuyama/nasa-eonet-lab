@@ -136,6 +136,8 @@ select:disabled { cursor: wait; }
 .map-panel { height: clamp(360px, 43vh, 570px); min-height: 360px; position: relative; isolation: isolate; background: #10222b; }
 .map-panel #map { position: absolute; inset: 0; z-index: 0; }
 .leaflet-container { background: #10222b; font-family: inherit; }
+/* Match the dark interface without changing event colors or controls. */
+.earthwatch-base-tiles { filter: invert(1) hue-rotate(180deg) saturate(.45) brightness(.82) contrast(.92); }
 .map-top { position: absolute; inset: 16px 17px auto; display: flex; align-items: center; justify-content: space-between; gap: 10px; z-index: 800; pointer-events: none; }
 .map-pill, .map-fit { display: inline-flex; align-items: center; gap: 7px; border: 1px solid #52667380; background: #12222beb; color: #d4e3e9; padding: 9px 12px; border-radius: 6px; backdrop-filter: blur(10px); font-size: 10px; box-shadow: 0 3px 12px #0002; }
 .map-pill svg { width: 15px; height: 15px; color: #b1ddcf; }
@@ -156,7 +158,8 @@ select:disabled { cursor: wait; }
 .leaflet-control-attribution a { color: #a9c8d5 !important; }
 .leaflet-tooltip.event-tooltip { color: #e3eff3; background: #152932; border: 1px solid #496976; font-size: 11px; padding: 10px 12px; border-radius: 6px; box-shadow: 0 3px 15px #0004; white-space: normal; max-width: 240px; }
 .leaflet-tooltip.event-tooltip:before { border-top-color: #496976; }
-.map-tile-notice { position: absolute; z-index: 805; top: 66px; left: 17px; max-width: min(440px, calc(100% - 34px)); padding: 10px 12px; background: #302b22ed; border: 1px solid #806844; border-radius: 6px; color: #e9d6b5; font-size: 11px; line-height: 1.6; }
+.map-tile-notice, .map-link-notice { position: absolute; z-index: 805; top: 66px; left: 17px; max-width: min(440px, calc(100% - 34px)); padding: 10px 12px; background: #302b22ed; border: 1px solid #806844; border-radius: 6px; color: #e9d6b5; font-size: 11px; line-height: 1.6; }
+.map-link-notice { top: auto; bottom: 52px; }
 .map-tile-notice p { margin: 0; }
 .map-retry { background: transparent; border: 1px solid #957d52; color: #f8e1b9; padding: 5px 9px; margin-top: 7px; border-radius: 4px; font-size: 10px; }
 .map-detail { position: absolute; z-index: 850; right: 61px; bottom: 50px; width: min(340px, calc(100% - 36px)); max-height: calc(100% - 112px); overflow-y: auto; padding: 22px; background: #13242ff5; border: 1px solid #56786f; border-radius: 10px; box-shadow: 0 14px 50px #0007; backdrop-filter: blur(14px); }

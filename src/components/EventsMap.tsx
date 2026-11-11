@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { isTauri } from '@tauri-apps/api/core';
+import { openUrl } from '@tauri-apps/plugin-opener';
 import L from 'leaflet';
 import type { EventRow } from '../lib/eonet';
 import { categoryLabel, colorFor } from '../lib/eonet';
@@ -42,6 +44,7 @@ export default function EventsMap({ events, selected, onSelect, fitToken }: Prop
   const selectedRef = useRef(selected);
   const [tileProblem, setTileProblem] = useState(false);
   const [tilesRetrying, setTilesRetrying] = useState(false);
+  const [attributionFailed, setAttributionFailed] = useState(false);
   onSelectRef.current = onSelect;
   selectedRef.current = selected;
 
@@ -56,7 +59,7 @@ export default function EventsMap({ events, selected, onSelect, fitToken }: Prop
       zoomControl: false,
       worldCopyJump: true,
       preferCanvas: true,
-      minZoom: 1,
+      minZoom: 0,
     }).setView(WORLD_CENTER, 2);
     map.current = current;
     L.control.zoom({
@@ -66,9 +69,9 @@ export default function EventsMap({ events, selected, onSelect, fitToken }: Prop
     }).addTo(current);
     current.attributionControl.setPrefix(false);
 
-    const tiles = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-      attribution: '© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap</a> © <a href="https://carto.com/attributions" target="_blank" rel="noreferrer">CARTO</a>',
-      subdomains: 'abcd',
+    const tiles = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> contributors',
+      className: 'earthwatch-base-tiles',
       maxZoom: 18,
     });
     tiles.on('tileerror', (event: L.TileErrorEvent) => {
@@ -86,6 +89,20 @@ export default function EventsMap({ events, selected, onSelect, fitToken }: Prop
     tileLayer.current = tiles;
     layer.current = L.layerGroup().addTo(current);
 
+    // Leaflet owns this anchor, so use the same native browser opener as other
+    // source links without navigating the desktop application's WebView.
+    const container = host.current;
+    const openAttribution = async (event: MouseEvent) => {
+      if (!isTauri() || !(event.target instanceof Element)) return;
+      const link = event.target.closest<HTMLAnchorElement>('.leaflet-control-attribution a');
+      if (!link || link.href !== 'https://www.openstreetmap.org/copyright') return;
+      event.preventDefault();
+      setAttributionFailed(false);
+      try { await openUrl(link.href); }
+      catch { setAttributionFailed(true); }
+    };
+    container.addEventListener('click', openAttribution, true);
+
     // The map also changes size when its sibling panels or the mobile layout change.
     let resizeFrame = 0;
     const resize = new ResizeObserver(() => {
@@ -97,6 +114,7 @@ export default function EventsMap({ events, selected, onSelect, fitToken }: Prop
     return () => {
       resize.disconnect();
       cancelAnimationFrame(resizeFrame);
+      container.removeEventListener('click', openAttribution, true);
       tiles.off();
       current.remove();
       map.current = null;
@@ -180,5 +198,6 @@ export default function EventsMap({ events, selected, onSelect, fitToken }: Prop
       <span>{tilesRetrying ? '地図を読み込み直しています…' : '背景地図を読み込めませんでした。イベント一覧は引き続き利用できます。'}</span>
       {!tilesRetrying && <button type="button" className="map-retry" onClick={retryMap}>再読み込み</button>}
     </div>}
+    {attributionFailed && <div className="map-link-notice" role="alert">ページを開けませんでした。もう一度お試しください。</div>}
   </>;
 }

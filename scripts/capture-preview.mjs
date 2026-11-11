@@ -13,10 +13,15 @@ const started = Date.now();
 const deadline = started + 110_000;
 const metadata = {
   source: 'https://eonet.gsfc.nasa.gov/api/v3/events',
+  mapProvider: 'OpenStreetMap Standard',
+  captureScope: 'initial-view-and-responsive-layout',
   usesFixtures: false,
   startedAt: new Date(started).toISOString(),
   completedAt: null,
-  success: false,
+  automatedChecksPassed: false,
+  visualReviewRequired: true,
+  visualReviewStatus: 'pending',
+  visualReviewNote: 'Inspect the screenshots to confirm geographic map content. HTTP success and decoded image dimensions do not prove that a tile contains a map.',
   visibleCount: null,
   nasaError: null,
   nasaRequests: [],
@@ -174,7 +179,7 @@ try {
   page.on('pageerror', error => metadata.pageErrors.push(describe(error)));
   page.on('requestfailed', request => {
     const destination = new URL(request.url());
-    if (destination.hostname.endsWith('.basemaps.cartocdn.com')) {
+    if (destination.hostname === 'tile.openstreetmap.org') {
       tileFailure({ url: request.url(), error: request.failure()?.errorText ?? 'Request failed' });
     }
     if (destination.hostname === 'eonet.gsfc.nasa.gov') {
@@ -184,7 +189,7 @@ try {
   page.on('response', response => {
     const destination = new URL(response.url());
     if (destination.hostname === 'eonet.gsfc.nasa.gov') metadata.nasaRequests.push({ url: response.url(), status: response.status() });
-    if (destination.hostname.endsWith('.basemaps.cartocdn.com') && response.status() >= 400) {
+    if (destination.hostname === 'tile.openstreetmap.org' && response.status() >= 400) {
       tileFailure({ url: response.url(), status: response.status() });
     }
   });
@@ -213,18 +218,9 @@ try {
   }
   await capture(page, 'desktop');
 
-  const firstEvent = page.locator('.event-card').first();
-  if (await firstEvent.count()) {
-    await firstEvent.click({ timeout: timeoutFor(8_000) });
-    await page.getByRole('region', { name: 'イベントの詳細', exact: true }).waitFor({ state: 'visible', timeout: timeoutFor(5_000) });
-    await capture(page, 'detail');
-    await page.getByRole('button', { name: '詳細を閉じる', exact: true }).click({ timeout: timeoutFor(5_000) });
-  } else {
-    metadata.warnings.push('No event was available for a detail capture.');
-  }
-
+  // Capture only the current viewport and its responsive layout. Selection,
+  // panning and zooming are exercised exclusively with mocked tiles in E2E.
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.getByRole('button', { name: '地図と傾向', exact: true }).click({ timeout: timeoutFor(5_000) });
   await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
   await capture(page, 'mobile');
   state = await readState(page);
@@ -240,8 +236,8 @@ try {
   clearTimeout(watchdog);
   metadata.completedAt = new Date().toISOString();
   metadata.elapsedMs = Date.now() - started;
-  metadata.success = metadata.failureReasons.length === 0;
+  metadata.automatedChecksPassed = metadata.failureReasons.length === 0;
   await writeFile(path.join(output, 'live-preview-metadata.json'), `${JSON.stringify(metadata, null, 2)}\n`);
-  console.log(JSON.stringify({ success: metadata.success, visibleCount: metadata.visibleCount, screenshots: metadata.screenshots.map(item => item.file), failures: metadata.failureReasons, metadata: 'test-results/live-preview-metadata.json' }, null, 2));
-  if (!metadata.success) process.exitCode = 1;
+  console.log(JSON.stringify({ automatedChecksPassed: metadata.automatedChecksPassed, visualReviewRequired: metadata.visualReviewRequired, visibleCount: metadata.visibleCount, screenshots: metadata.screenshots.map(item => item.file), failures: metadata.failureReasons, metadata: 'test-results/live-preview-metadata.json' }, null, 2));
+  if (!metadata.automatedChecksPassed) process.exitCode = 1;
 }
